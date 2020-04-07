@@ -26,7 +26,7 @@ EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 """
 
 __author__ = "Augusto Damasceno (augustodamasceno@protonmail.com)"
-__version__ = "0.1"
+__version__ = "0.2"
 __copyright__ = "Copyright (c) 2020 Augusto Damasceno"
 __license__ = "2-Clause BSD License"
 
@@ -34,6 +34,10 @@ __license__ = "2-Clause BSD License"
 import requests
 from bs4 import BeautifulSoup
 import validators
+
+
+img_formats = [".apng", ".bmp", ".gif", ".ico", ".cur", ".jpg", ".jpeg",
+               ".jfif", ".pjpeg", ".pjp", ".png", ".svg", ".tif", ".tiff", ".webp"]
 
 
 def url2bs(url: str):
@@ -66,6 +70,15 @@ def all_urls(soup: BeautifulSoup):
         if url is not None:
             all_urls_list.append(url)
 
+    all_urls_images = soup.findAll('img')
+    for result_set in all_urls_images:
+        url = result_set.get('src')
+        if url is not None:
+            all_urls_list.append(url)
+        url = result_set.get('data-src')
+        if url is not None:
+            all_urls_list.append(url)
+
     return all_urls_list
 
 
@@ -81,6 +94,15 @@ def local_urls(soup: BeautifulSoup):
         url = result_set.get('href')
         if url is not None and url.startswith('/'):
             local.append(url)
+    
+    url_result_set_img = soup.findAll('img')
+    for result_set in url_result_set_img:
+        url = result_set.get('src')
+        if url is not None and url.startswith('/'):
+            local.append(url)
+        url = result_set.get('data-src')
+        if url is not None and url.startswith('/'):
+            local.append(url)
 
     return local
 
@@ -92,13 +114,22 @@ def not_local_urls(soup: BeautifulSoup):
     :return: List with all not local URLs.
     """
     url_result_set = soup.findAll('a')
-    local = []
+    not_local = []
     for result_set in url_result_set:
         url = result_set.get('href')
         if url is not None and (not url.startswith('/') or url.startswith('.')):
-            local.append(url)
-
-    return local
+            not_local.append(url)
+    
+    url_result_set_img = soup.findAll('img')
+    for result_set in url_result_set_img:
+        url = result_set.get('src')
+        if url is not None and (not url.startswith('/') or url.startswith('.')):
+            not_local.append(url)
+        url = result_set.get('data-src')
+        if url is not None and (not url.startswith('/') or url.startswith('.')):
+            not_local.append(url)
+    
+    return not_local
 
 
 def next_level(urls_list, base_url):
@@ -126,11 +157,27 @@ def next_level(urls_list, base_url):
     return levels
 
 
+def get_img(links):
+    """
+    From a list with URLs, return the list filtered by images extensions in the name.
+    :param links: List of URLs.
+    :return: Input list filtered by images extensions in the name.
+    """
+    global img_formats
+
+    links_images = []
+    for link in links:
+        for extension in img_formats:
+            if extension in link and link not in links_images:
+                links_images.append(link)
+
+    return links_images
+
+
 if __name__ == "__main__":
     """ If the module is called as script, receive one or more URLs as args and prints the results for:
         * all_urls
         * local_urls
-        * new_level
     """
     import sys
 
@@ -149,10 +196,3 @@ if __name__ == "__main__":
                 for u in local_urls(soup):
                     print(str(local) + ": " + u)
                     local += 1
-                for u in next_level(all_urls_list, sys.argv[arg]):
-                    key, value = list(u.items())[0]
-                    print('\nNext level urls for ' + sys.argv[arg] + '\n\t from url ' + key)
-                    n = 1
-                    for un in value:
-                        print(str(n)+": "+un)
-                        n += 1
