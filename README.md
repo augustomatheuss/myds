@@ -6,7 +6,7 @@ My data science package
 * lxml  
 * beautifulsoup4  
 * validators  
-* scipy.stats.norm  
+* scipy  
 
 ## Modules  
 * urls : urls extraction  
