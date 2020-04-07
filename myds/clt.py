@@ -81,6 +81,21 @@ def get_error_conf(sample_size, confidence, std):
     return z * (std/np.sqrt(sample_size))
 
 
+def get_conf_interval(confidence, sample_size, mean, std):
+    """
+    Return the confidence interval from mean, standard deviation and the sample size.
+    :param confidence: Confidence level
+    :param sample_size: Sample size
+    :param mean: Mean of the sample
+    :param std: Standard deviation
+    :return: Confidence interval
+    """
+    # interval ==
+    #   mean - get_error_conf(sample_size, confidence, std), mean + get_error_conf(sample_size, confidence, std)
+    interval = norm.interval(alpha=confidence, loc=mean, scale=std/np.sqrt(sample_size))
+    return interval
+
+
 if __name__ == "__main__":
     """ If the module is called as script, plot the probability density function 
         and the cumulative distribution function.
